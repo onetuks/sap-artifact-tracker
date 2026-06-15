@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QMessageBox, QStatusBar,
+    QPushButton, QLabel, QMessageBox, QStatusBar, QFileDialog,
 )
 from PyQt6.QtCore import Qt
 
@@ -60,16 +60,32 @@ class MainWindow(QMainWindow):
 
         # 하단 액션 버튼
         action_bar = QHBoxLayout()
+
+        # 선택 관련 버튼
+        self._select_all_btn = QPushButton("Select All")
+        self._uncheck_all_btn = QPushButton("Uncheck All")
+        self._select_all_btn.setFixedHeight(32)
+        self._uncheck_all_btn.setFixedHeight(32)
+        self._select_all_btn.clicked.connect(self._table.check_all_visible)
+        self._uncheck_all_btn.clicked.connect(self._table.uncheck_all_visible)
+        action_bar.addWidget(self._select_all_btn)
+        action_bar.addWidget(self._uncheck_all_btn)
+
+        action_bar.addSpacing(20)
+
+        # 작업 관련 버튼
         self._deploy_btn = QPushButton("Deploy Selected")
         self._undeploy_btn = QPushButton("Undeploy Selected")
         self._delete_btn = QPushButton("Delete Selected")
-        for btn in (self._deploy_btn, self._undeploy_btn, self._delete_btn):
+        self._export_btn = QPushButton("Export to Excel")
+        for btn in (self._deploy_btn, self._undeploy_btn, self._delete_btn, self._export_btn):
             btn.setFixedHeight(32)
             action_bar.addWidget(btn)
 
         self._deploy_btn.clicked.connect(lambda: self._on_action("Deploy"))
         self._undeploy_btn.clicked.connect(lambda: self._on_action("Undeploy"))
         self._delete_btn.clicked.connect(lambda: self._on_action("Delete"))
+        self._export_btn.clicked.connect(self._on_export_excel)
         root.addLayout(action_bar)
 
         # 상태 바
@@ -199,6 +215,64 @@ class MainWindow(QMainWindow):
         self._action_worker.start()
         progress_dlg.exec()
 
+    def _on_export_excel(self):
+        checked = self._table.get_checked_artifacts()
+        if not checked:
+            QMessageBox.information(self, "선택 없음", "내보낼 아티팩트를 체크박스로 선택해주세요.")
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Excel 파일 저장",
+            "artifacts.xlsx",
+            "Excel Files (*.xlsx)"
+        )
+        if not file_path:
+            return
+
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, PatternFill, Alignment
+
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Artifacts"
+
+            headers = ["Package", "Artifact", "Runtime", "Status", "Version"]
+            ws.append(headers)
+
+            header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            header_font = Font(color="FFFFFF", bold=True)
+            for cell in ws[1]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+            for art in checked:
+                ws.append([
+                    art.package_name,
+                    art.artifact_name,
+                    art.runtime_name,
+                    art.status.value,
+                    art.version,
+                ])
+
+            ws.column_dimensions['A'].width = 20
+            ws.column_dimensions['B'].width = 30
+            ws.column_dimensions['C'].width = 20
+            ws.column_dimensions['D'].width = 15
+            ws.column_dimensions['E'].width = 12
+
+            for row in ws.iter_rows(min_row=2):
+                for cell in row:
+                    cell.alignment = Alignment(horizontal="left", vertical="center")
+
+            wb.save(file_path)
+            QMessageBox.information(self, "성공", f"{len(checked)}개의 아티팩트를 Excel 파일로 내보냈습니다.\n\n{file_path}")
+            self._status_bar.showMessage(f"Excel 파일로 {len(checked)}개 아티팩트를 내보냈습니다.")
+        except Exception as e:
+            QMessageBox.critical(self, "내보내기 실패", f"Excel 파일 생성 중 오류가 발생했습니다.\n\n{str(e)}")
+
     @staticmethod
     def _make_action_fn(action: str):
         """작업 종류에 따른 (SapClient, Artifact) -> None 함수 반환."""
@@ -219,5 +293,5 @@ class MainWindow(QMainWindow):
         return fn
 
     def _set_buttons_enabled(self, enabled: bool):
-        for btn in (self._deploy_btn, self._undeploy_btn, self._delete_btn):
+        for btn in (self._select_all_btn, self._uncheck_all_btn, self._deploy_btn, self._undeploy_btn, self._delete_btn, self._export_btn):
             btn.setEnabled(enabled)

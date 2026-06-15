@@ -126,3 +126,19 @@ class ArtifactTableWidget(QTableView):
 
     def proxy(self) -> ArtifactFilterProxy:
         return self._proxy
+
+    def check_all_visible(self):
+        """현재 필터링된 행의 모든 체크박스를 체크합니다."""
+        for row in range(self._proxy.rowCount()):
+            source_row = self._proxy.mapToSource(self._proxy.index(row, 0)).row()
+            item = self._source_model.item(source_row, COL_CHECK)
+            if item:
+                item.setCheckState(Qt.CheckState.Checked)
+
+    def uncheck_all_visible(self):
+        """현재 필터링된 행의 모든 체크박스를 해제합니다."""
+        for row in range(self._proxy.rowCount()):
+            source_row = self._proxy.mapToSource(self._proxy.index(row, 0)).row()
+            item = self._source_model.item(source_row, COL_CHECK)
+            if item:
+                item.setCheckState(Qt.CheckState.Unchecked)
