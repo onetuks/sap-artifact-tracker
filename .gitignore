@@ -1,0 +1,5 @@
+/.claude
+/.venv
+/dist
+*/__pycache__
+/build
