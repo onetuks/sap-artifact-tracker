@@ -18,7 +18,7 @@ def deploy_artifact(client: SapClient, artifact_id: str, version: str) -> None:
     """design-time artifact를 런타임에 배포."""
     client.post(
         "/api/v1/DeployIntegrationDesigntimeArtifact",
-        params={"Id": f"'{artifact_id}'", "Version": f"'{version}'"},
+        params={"Id": f"'{artifact_id}'", "Version": "'active'"},
     )
 
 

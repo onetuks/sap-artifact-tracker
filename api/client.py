@@ -26,12 +26,15 @@ class SapClient:
         url = f"{self._base}{path}"
         print(f"\n>>> POST 요청 시작: {url}")
 
-        # X-CSRF-Token을 받기 위해 먼저 GET 요청
+        # X-CSRF-Token을 받기 위해 루트 경로에 GET 요청
+        token_url = f"{self._base}/api/v1/"
         fetch_headers = {"X-CSRF-Token": "Fetch"}
-        fetch_response = self._session.get(url, headers=fetch_headers)
+        print(f">>> Token 가져오기 GET 요청 - URL: {token_url}")
+        fetch_response = self._session.get(token_url, headers=fetch_headers)
 
         if fetch_response.status_code not in [200, 201]:
-            raise Exception(f"Token fetch failed. Status: {fetch_response.status_code}")
+            print(f">>> Token 가져오기 에러 응답: {fetch_response.text}")
+            raise Exception(f"Token fetch failed. Status: {fetch_response.status_code}, Response: {fetch_response.text}")
 
         csrf_token = fetch_response.headers.get("x-csrf-token")
         if not csrf_token:
@@ -39,10 +42,13 @@ class SapClient:
         print(f">>> 토큰: {csrf_token}")
 
         # POST 요청에 토큰 포함
-        post_headers = {"X-CSRF-Token": csrf_token}
+        post_headers = {"X-CSRF-Token": csrf_token, "Content-Type": "application/json"}
         print(f">>> POST 헤더: {post_headers}")
+        print(f">>> POST 파라미터: {params}")
         resp = self._session.post(url, params=params, headers=post_headers, timeout=30)
         print(f">>> POST 응답 상태: {resp.status_code}")
+        if resp.status_code >= 400:
+            print(f">>> 에러 응답: {resp.text}")
         resp.raise_for_status()
         print(f">>> POST 완료: {url}")
         return resp
