@@ -1,4 +1,7 @@
+import logging
 from api.client import SapClient
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_runtime_artifacts(client: SapClient) -> list[dict]:
@@ -9,4 +12,6 @@ def fetch_runtime_artifacts(client: SapClient) -> list[dict]:
 
 def undeploy_artifact(client: SapClient, artifact_id: str) -> None:
     """런타임 artifact undeploy."""
+    logger.info(f"Undeploy 시작: {artifact_id}")
     client.delete(f"/api/v1/IntegrationRuntimeArtifacts('{artifact_id}')")
+    logger.info(f"Undeploy 완료: {artifact_id}")

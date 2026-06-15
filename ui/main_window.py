@@ -116,11 +116,13 @@ class MainWindow(QMainWindow):
     # ── 일괄 작업 ──────────────────────────────────────────
 
     def _on_action(self, action: str):
+        print(f"DEBUG: _on_action 호출됨 - action={action}")
         if self._current_tenant is None:
             QMessageBox.warning(self, "테넌트 없음", "테넌트를 먼저 선택하세요.")
             return
 
         checked = self._table.get_checked_artifacts()
+        print(f"DEBUG: 선택된 아티팩트 수: {len(checked)}")
         if not checked:
             QMessageBox.information(self, "선택 없음", "작업할 아티팩트를 체크박스로 선택해주세요.")
             return
@@ -135,7 +137,10 @@ class MainWindow(QMainWindow):
                 )
                 return
         elif action == "Undeploy":
+            print(f"DEBUG: Undeploy validation 확인 중")
             invalid = [a for a in checked if a.status == ArtifactStatus.NOT_DEPLOYED]
+            print(f"DEBUG: NOT_DEPLOYED 아티팩트 수: {len(invalid)}")
+            print(f"DEBUG: 아티팩트 상태들: {[a.status for a in checked]}")
             if invalid:
                 QMessageBox.warning(
                     self, "Undeploy 불가",
@@ -153,8 +158,10 @@ class MainWindow(QMainWindow):
 
         dlg = ConfirmDialog(action, checked, self)
         if dlg.exec() != ConfirmDialog.DialogCode.Accepted:
+            print("DEBUG: 확인 다이얼로그에서 취소됨")
             return
 
+        print(f"DEBUG: _run_action 호출 - action={action}, 아티팩트 수={len(checked)}")
         self._run_action(action, checked)
 
     def _run_action(self, action: str, artifacts: list[Artifact]):

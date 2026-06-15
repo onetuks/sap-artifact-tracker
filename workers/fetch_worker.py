@@ -41,14 +41,20 @@ class ActionWorker(QThread):
         self._artifacts = artifacts
 
     def run(self):
+        print("DEBUG: ActionWorker.run() 시작")
         client = SapClient(self._tenant)
         failures: list[str] = []
         total = len(self._artifacts)
+        print(f"DEBUG: 처리할 아티팩트 수: {total}")
         for i, artifact in enumerate(self._artifacts, start=1):
             name = artifact.artifact_name if artifact.artifact_name != "-" else artifact.runtime_name
+            print(f"DEBUG: 아티팩트 처리 중 ({i}/{total}): {name}")
             self.progress.emit(i, total, name)
             try:
                 self._action_fn(client, artifact)
+                print(f"DEBUG: {name} 처리 완료")
             except Exception as e:
+                print(f"DEBUG: {name} 처리 중 에러: {e}")
                 failures.append(f"{name}: {e}")
+        print(f"DEBUG: ActionWorker.run() 완료 - 실패 수: {len(failures)}")
         self.finished.emit(failures)

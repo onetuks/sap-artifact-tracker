@@ -118,7 +118,7 @@ class ArtifactTableWidget(QTableView):
             return
         row = item.row()
         is_checked = item.checkState() == Qt.CheckState.Checked
-        color = _SELECTED_COLOR if is_checked else _WHITE_COLOR
+        color = _SELECTED_COLOR if is_checked else _GREY_COLOR
         for col in range(self._source_model.columnCount()):
             cell = self._source_model.item(row, col)
             if cell:
